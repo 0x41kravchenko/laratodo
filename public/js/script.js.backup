@@ -1,0 +1,343 @@
+/* Categories functions */
+
+function getCats() {
+	let activeCatId = $('.categories-list a.list-group-item.active').data('category-id');
+	$.ajax({
+		url: '/categories',
+		method: 'GET',
+		dataType: 'html',
+		success: function(response) {
+			$('.categories-list').html(response);
+			// setting active category to one that was active before updating the list
+			$('.categories-list a.list-group-item.active').removeClass('active');
+			$('.categories-list a.list-group-item[data-category-id="' + activeCatId + '"]').addClass('active');
+		},
+		error: function(jqXHR, status, errorThrown) {
+			let errorMessage = '<div class="alert alert-danger alert-message">Error updating categories list, please reload the page.</div>';
+			$('.categories-list').html(errorMessage);
+			console.log('Error updating categories list');
+		}
+	});
+}
+
+function deleteCat(id, csrf_token) {
+	$.ajax({
+		url: '/categories/' + id,
+		method: 'POST',
+		data: "_method=DELETE&_token=" + csrf_token,
+		success: function(response) {
+			getCats();
+			getTasks();
+			updateTaskFormsSelect();
+		},
+		error: function(jqXHR, status, errorThrown) {
+			console.log('Error deleting category');
+		}
+	});
+}
+
+function createCat() {
+
+	let valErrors = validateInput('#create-category-form', 'name');
+	if (!$.isEmptyObject(valErrors)) {
+		$('#create-category-form .form-errors').html(errorsHTML(valErrors));
+		return;
+	}
+
+	$.ajax({
+		url: '/categories',
+		method: 'POST',
+		data: $('#create-category-form').serialize(),
+		success: function() {
+			getCats();
+			$('#create-category-modal').modal('hide');
+			$('#create-category-form .form-errors').empty();
+			$('#create-category-form').trigger('reset');
+			updateTaskFormsSelect();
+		},
+		error: function(jqXHR) {
+			$('#create-category-form .form-errors').html(errorsHTML(jqXHR.responseJSON.errors));
+		}
+	});
+}
+
+function editCat() {
+
+	let valErrors = validateInput('#edit-category-form', 'name');
+	if (!$.isEmptyObject(valErrors)) {
+		$('#edit-category-form .form-errors').html(errorsHTML(valErrors));
+		return;
+	}
+
+	let catId = $('#edit-category-form input[name="id"]').val();
+	$.ajax({
+		url: '/categories/' + catId,
+		method: 'POST',
+		data: $('#edit-category-form').serialize(),
+		success: function() {
+			getCats();
+			$('#edit-category-modal').modal('hide');
+			getTasks();
+			updateTaskFormsSelect();
+		},
+		error: function(jqXHR) {
+			console.log('Error editing category');
+			$('#edit-category-form .form-errors').html(errorsHTML(jqXHR.responseJSON.errors));
+		}
+	});
+}
+
+/* Tasks functions */
+
+function getTasks() {
+	let activeCatId = $('.categories-list a.list-group-item.active').data('category-id');
+	$.ajax({
+		url: '/tasks?cat=' + activeCatId,
+		method: 'GET',
+		dataType: 'html',
+		success: function(response) {
+			$('.tasks-list').html(response);
+		},
+		error: function(jqXHR) {
+			let errorMessage = '<div class="alert alert-danger alert-message">Error updating tasks list, please reload the page.</div>';
+			$('.tasks-list').html(errorMessage);
+			console.log('Error updating tasks list');
+		}
+	});
+}
+
+function deleteTask(id, csrf_token) {
+	$.ajax({
+		url: '/tasks/' + id,
+		method: 'POST',
+		data: '_method=DELETE&_token=' + csrf_token,
+		success: function() {
+			getTasks();
+			getCats(); // refresh counters in categories list
+		},
+		error: function() {
+			console.log('Error deleting task');
+		}
+	});
+}
+
+function createTask() {
+
+	let valErrors = validateInput('#create-task-form', 'title');
+	if (!$.isEmptyObject(valErrors)) {
+		$('#create-task-form .form-errors').html(errorsHTML(valErrors));
+		return;
+	}
+	
+	$.ajax({
+		url: '/tasks',
+		method: 'POST',
+		data: $('#create-task-form').serialize(),
+		success: function() {
+			getTasks();
+			getCats(); // update categories list counters
+			$('#create-task-modal').modal('hide');
+			$('#create-task-form .form-errors').empty();
+			$('#create-task-form').trigger('reset');
+		},
+		error: function(jqXHR) {
+			$('#create-task-form .form-errors').html(errorsHTML(jqXHR.responseJSON.errors));
+		}
+	});
+}
+
+function editTask() {
+
+	let valErrors = validateInput('#edit-task-form', 'title');
+	if (!$.isEmptyObject(valErrors)) {
+		$('#edit-task-form .form-errors').html(errorsHTML(valErrors));
+		return;
+	}
+
+	let taskId = $('#edit-task-form input[name="id"]').val();
+	$.ajax({
+		url: '/tasks/' + taskId,
+		method: 'POST',
+		data: $('#edit-task-form').serialize(),
+		success: function() {
+			getTasks();
+			getCats(); // updating categories list counters
+			$('#edit-task-modal').modal('hide');
+		},
+		error: function(jqXHR) {
+			$('#edit-task-form .form-errors').html(errorsHTML(jqXHR.responseJSON.errors));
+		}
+	});
+}
+
+function setTaskStatus(id, status, csrf_token) {
+	$.ajax({
+		url: '/tasks/' + id + '/set-status',
+		method: 'POST',
+		data: '_method=PUT&_token=' + csrf_token + '&completed=' + status,
+		success: function() {
+			getTasks();
+		},
+		error: function() {
+			console.log('Error setting task status');
+		}
+	});
+}
+
+function updateTaskFormsSelect() { // Update both create task and edit task form's select input field
+	$.ajax({
+		url: '/categories/get-select-input',
+		method: 'GET',
+		dataType: 'html',
+		success: function(response) {
+			$('#create-task-modal .categories-select-input').html(response);
+			$('#edit-task-modal .categories-select-input').html(response);
+		},
+		error: function(jqXHR) {
+			console.log('Error updating categories select input');
+		}
+	});
+}
+
+/* Misc functions */
+
+function errorsHTML(errorsObj) {
+	let errorsDiv = '<div class="alert alert-danger"><ul>';
+	$.each(errorsObj, function(key, value) {
+		errorsDiv += '<li>' + value[0] + '</li>';
+	});
+	errorsDiv += '</ul></div>';
+	return errorsDiv;
+}
+
+// Form input validation function with Laravel-like errors return
+function validateInput(formId, inputName) {
+	let input_data_length = $(formId + ' input[name="' + inputName + '"').val().length;
+	let errorsObj = {};
+	
+	errorsObj = testValidationRule(errorsObj, input_data_length ==  0, inputName, 'The %input% field is required.');
+	
+	if ($.isEmptyObject(errorsObj)) // If previous rule triggered don't test this one. 
+		errorsObj = testValidationRule(errorsObj, input_data_length <   2, inputName, 'The %input% must be at least 2 characters.');
+	
+	errorsObj = testValidationRule(errorsObj, input_data_length > 128, inputName, 'The %input% may not be greater than 128 characters');
+	
+	return errorsObj;
+}
+
+function testValidationRule(errorsObj, ruleStatus, inputName, errorMessage) {
+	if (ruleStatus) {
+		errorMessage = errorMessage.replace("%input%", inputName);
+		if (typeof errorsObj[inputName] == 'undefined') { // If object property id undefined then define it with new value
+			errorsObj[inputName]= [errorMessage];
+		} else {  // Else, id defined append array
+				errorsObj[inputName].push(errorMessage);
+		}
+	}
+	return errorsObj;
+}
+
+/* Categories event listeners*/
+
+$('.categories-list').on('click', 'a.list-group-item', function(e) { // Filter tasks by active category
+	e.preventDefault();
+	//let catId = $(this).data('category-id');
+	//console.log('Filter by category: ' + catId);
+	$('.categories-list .active').removeClass('active');
+	$(this).addClass('active');
+	getTasks();
+});
+
+$('.categories-list').on('click', '.delete-category-icon', function(e) {
+	e.stopPropagation();
+	let catId = $(this).closest('a').data('category-id');
+	let csrf_token = $(this).data('csrf-token');
+	deleteCat(catId, csrf_token);
+});
+
+$('.categories-list').on('click', '.edit-category-icon', function(e) {
+	e.stopPropagation();
+	let catId = $(this).closest('a').data('category-id');
+	let catName = $(this).closest('a').children('.category-name').text();
+	let catColor = $(this).closest('a').data('category-color');
+	$('#edit-category-form input[name="id"]').val(catId);
+	$('#edit-category-form input[name="name"]').val(catName);
+	$('#edit-category-form input[name="color"]').val(catColor);
+	$('#edit-category-form .form-errors').empty();
+	$('#edit-category-modal').modal('show');
+});
+
+$('#edit-category-modal').on('submit', '#edit-category-form', function(e) {
+	e.preventDefault();
+	editCat();
+});
+
+$('#edit-category-modal').on('click', '#edit-category-button', function(e) {
+	editCat();
+});
+// or $('#edit-category-modal').on('click', '#edit-category-button', editCat);
+
+$('#create-category-modal').on('submit', '#create-category-form', function(e) {
+	e.preventDefault();
+	createCat();
+});
+
+$('#create-category-modal').on('click', '#create-category-button', function(e) {
+	createCat();
+});
+
+/* Tasks event listeners */
+
+$('.tasks-list').on('click', '.delete-task-icon', function(e) {
+	let taskId = $(this).closest('li').data('task-id');
+	let csrf_token = $(this).data('csrf-token');
+	deleteTask(taskId, csrf_token);
+});
+
+$('.tasks-list').on('click', '.edit-task-icon', function(e) {
+	let taskId = $(this).closest('li').data('task-id');
+	let taskTitle = $(this).closest('li').find('.task-title').text();
+	let taskDescr = $(this).closest('li').find('.task-description').text();
+	let catId = $(this).closest('li').find('.task-category').data('category-id');
+	$('#edit-task-form input[name="id"]').val(taskId);
+	$('#edit-task-form input[name="title"]').val(taskTitle);
+	$('#edit-task-form textarea[name="description"]').val(taskDescr);
+	$('#edit-task-form option[selected="selected"]').removeProp('selected');
+	$('#edit-task-form option[value="' + catId + '"]').prop('selected', 'selected');
+	$('#edit-task-form .form-errors').empty();
+	$('#edit-task-modal').modal('show');
+})
+
+$('#edit-task-modal').on('submit', '#edit-task-form', function(e) {
+	e.preventDefault();
+	editTask();
+});
+
+$('#edit-task-modal').on('click', '#edit-task-button', function(e) {
+	editTask();
+});
+
+$('#create-task-modal').on('submit', '#create-task-form', function(e) {
+	e.preventDefault();
+	createTask();
+});
+
+$('#create-task-modal').on('click', '#create-task-button', function(e) {
+	createTask();
+});
+
+$('.tasks-list').on('change', '#task-status', function(e) {
+	let taskId = $(this).closest('li').data('task-id');
+	let taskStatus = $(this).prop('checked');
+	let csrf_token = $(this).closest('li').find('.delete-task-icon').data('csrf-token');
+	setTaskStatus(taskId, taskStatus?1:0, csrf_token);
+});
+
+$('#create-task-modal').on('show.bs.modal', function(e) {
+	let activeCatId = $('.categories-list a.list-group-item.active').data('category-id');
+	if (activeCatId == "all") { // If selected filter is all categories then set select intput category to "None" 
+		activeCatId = 0;
+	}
+	$('#create-task-form option[selected="selected"]').removeProp('selected');
+	$('#create-task-form option[value="' + activeCatId + '"]').prop('selected', 'selected');
+});
