@@ -1,4 +1,4 @@
-##This is a todo list project which uses Laravel, Bootstrap, jQuery and AJAX.
+## This is a todo list project which uses Laravel, Bootstrap, jQuery and AJAX.
 
 Implemented features:
 - Creating, editing, deleting tasks and categories.
