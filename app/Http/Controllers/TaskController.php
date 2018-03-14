@@ -32,8 +32,9 @@ class TaskController extends Controller
 				'category_id' => 'required|integer' // Todo later: check if exists in database or equals 0;
 			]);
 			//Task::create(request(['title', 'description','category_id']));
-			auth()->user()->createTask( new Task(request(['title', 'description','category_id'])) );
-			\Mail::to(auth()->user())->send(new MailNotification);
+			$task = new Task(request(['title', 'description','category_id']));
+			auth()->user()->createTask( $task );
+			\Mail::to(auth()->user())->send( new MailNotification($task) );
 			return 'Done!';
 		}
 		

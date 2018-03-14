@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Task;
 
 class MailNotification extends Mailable
 {
@@ -16,9 +17,11 @@ class MailNotification extends Mailable
      *
      * @return void
      */
-    public function __construct()
+    public $task;
+     
+    public function __construct(Task $task)
     {
-        //
+        $this->task = $task;
     }
 
     /**
@@ -28,6 +31,6 @@ class MailNotification extends Mailable
      */
     public function build()
     {
-        return $this->view('emails.task_created');
+        return $this->subject('New task was created')->view('emails.task_created');
     }
 }
