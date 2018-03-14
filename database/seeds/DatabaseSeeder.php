@@ -19,16 +19,22 @@ class DatabaseSeeder extends Seeder
 					for($hci = 0; $hci < 6; $hci++) {
 						$color_hex .= $hex[rand(0, count($hex)-1)];
 					}
-        
+					
+					DB::table('users')->insert([
+						'name' => 'user_' . str_random(6),
+						'email' => str_random(5) . '@example.com',
+						'password' => Hash::make(str_random(5))
+					]);
+					
 	        DB::table('categories')->insert([
 						'name' => 'cat_' . str_random(5),
 						'color' => $color_hex
 	        ]);
 	        DB::table('tasks')->insert([
-						'user_id' => 0,
+						'user_id' => rand(1, 5),
 						'category_id' => rand(0, 5), // Generating also tasks without category (category_id = 0)
 						'title' => 'task_' . str_random(5),
-						'description' => 'Some task description here with random text' . str_random(32),
+						'description' => rand(0,1)?'Some task description here with random text' . str_random(32):null,
 						'completed' => rand(0, 1)
 	        ]);
         }

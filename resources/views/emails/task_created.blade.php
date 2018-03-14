@@ -2,20 +2,27 @@
 <html lang="en">
 	<head>
 		<title>Template title</title>
+		<style>
+			.task-info {
+				font-weight: bold;
+			}
+		</style>
 	</head>
 	<body>
 		<h1>New task was created!</h1>
-		
-		<span><b>Task title:</b> {{ $task->title }}</span><br>
-		
-		@if (!is_null($task->description))
-			<span><b>Task description:</b> {{ $task->description }}</span><br>
-		@endif
-		
-		@if (!is_null($task->category))
-			<span><b>Task category:</b> {{ $task->category }}</span><br>
-		@endif
-		
-		<span><b>Task expiration date:</b> </span><br>
+		<span class="task-info">Task details: </span>
+		<ul>
+			<li><span class="task-info">title: </span>{{ $task->title }}</li>
+			
+			@if (!is_null($task->description))
+				<li><span class="task-info">description: </span>{{ $task->description }}</li>
+			@endif
+			
+			@if (!is_null($task->category->name))
+				<li><span class="task-info">category: </span>{{ $task->category->name }}</li>
+			@endif
+			
+			<li><span class="task-info">expiration date: </span>(date)</li>
+		</ul>
 	</body>
 </html>
