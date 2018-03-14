@@ -13,4 +13,5 @@ class MainController extends Controller
 			$tasks = Task::all();
 			return view('index', compact('categories', 'tasks'));
     }
+    
 }

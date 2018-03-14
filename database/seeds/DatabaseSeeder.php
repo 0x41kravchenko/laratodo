@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
 						'color' => $color_hex
 	        ]);
 	        DB::table('tasks')->insert([
+						'user_id' => 0,
 						'category_id' => rand(0, 5), // Generating also tasks without category (category_id = 0)
 						'title' => 'task_' . str_random(5),
 						'description' => 'Some task description here with random text' . str_random(32),

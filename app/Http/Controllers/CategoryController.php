@@ -9,6 +9,10 @@ use App\Task;
 class CategoryController extends Controller
 {
     
+    public function __construct() {
+			$this->middleware('auth')->except(['index']);
+    }
+    
     public function index() {
 			$categories = Category::all();
 			$tasks = Task::all();

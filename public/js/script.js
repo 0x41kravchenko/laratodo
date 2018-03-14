@@ -146,7 +146,7 @@ let Category = {
 		$.ajax({
 			url: '/categories/' + id,
 			method: 'POST',
-			data: "_method=DELETE&_token=" + csrf_token,
+			data: '_method=DELETE&_token=' + csrf_token,
 			success: function(response) {
 				Category.getCats();
 				Task.getTasks();
@@ -217,14 +217,14 @@ let Task = {
 
 		Task.settings.tasksList.on('change', '#task-status', function(e) {
 			let taskId = $(this).closest('li').data('task-id');
-			let taskStatus = $(this).prop('checked');
+			let taskStatus = $(this).prop('checked')?1:0;
 			let csrf_token = $(this).closest('li').find('.delete-task-icon').data('csrf-token');
-			Task.setTaskStatus(taskId, taskStatus?1:0, csrf_token);
+			Task.setTaskStatus(taskId, taskStatus, csrf_token);
 		});
 		
 		Task.settings.createTaskModal.on('show.bs.modal', function(e) {
 			let activeCatId = Category.settings.activeCategoryId;
-			if (activeCatId == "all") { // If selected filter is all categories then set select intput category to "None" 
+			if (activeCatId == 'all' | activeCatId == 'my-tasks') { // If selected filter is "all tasks" or current user's tasks then set select intput category to "None" 
 				activeCatId = 0;
 			}
 			Task.settings.createTaskForm.find('option[selected="selected"]').removeProp('selected');
@@ -344,13 +344,113 @@ let Task = {
 	
 };
 
+let Auth = {
+	
+	settings: {
+	
+		navbar: $('#page-navbar'),
+		
+		registerForm: $('#register-form'),
+		registerDropdown: $('#register-dropdown'),
+		registerSubmitButton: $('#register-submit-button'),
+		
+		loginForm: $('#login-form'),
+		loginDropdown: $('#login-dropdown'),
+		loginSubmitButton: $('#login-submit-button'),
+		logoutButton: $('#logout-button')
+		
+	},
+	
+	init: function() {
+		Auth.bindUIActions();
+	},
+	
+	bindUIActions: function() {
+	
+		Auth.settings.navbar.on('submit', '#register-form', function(e) {
+			e.preventDefault();
+			Auth.registerUser();
+		});
+		
+		Auth.settings.navbar.on('submit', '#login-form', function(e) {
+			e.preventDefault();
+			let rememberMe = Auth.settings.loginForm.find('#remember-me').prop('checked')?1:0;
+			Auth.loginUser(rememberMe);
+		});
+		
+		Auth.settings.navbar.on('click', '#logout-button', function(e) {
+			e.preventDefault();
+			let csrftoken = $(this).data('csrf-token');
+			Auth.logoutUser(csrftoken);
+		});
+	},
+	
+	registerUser: function() {
+		let valErrors = validateInput(Auth.settings.registerForm.find('input[name="name"]'), 'required|min:2|max:64');
+		$.extend(valErrors, validateInput(Auth.settings.registerForm.find('input[name="email"]'), 'required|email|max:64'));
+		$.extend(valErrors, validateInput(Auth.settings.registerForm.find('input[name="password"]'), 'required|min:4|max:64|confirmed'));
+		if (!$.isEmptyObject(valErrors)) {
+			Auth.settings.registerForm.find('.form-errors').html(errorsHTML(valErrors));
+			return;
+		}
+		
+		$.ajax({
+			url: '/register',
+			method: 'POST',
+			data: Auth.settings.registerForm.serialize(),
+			success: function() {
+				$(document).ajaxStop(function() {location.reload(true)});
+			},
+			error: function(jqXHR) {
+				Auth.settings.registerForm.find('.form-errors').html(errorsHTML(jqXHR.responseJSON.errors));
+			}
+		});
+	},
+	
+	loginUser: function(rememberMe) {
+		$.ajax({
+			url: '/login',
+			method: 'POST',
+			data: Auth.settings.loginForm.serialize() + '&remember-me=' + rememberMe,
+			success: function() {
+				$(document).ajaxStop(function() {location.reload(true)});
+			},
+			error: function(jqXHR) {
+				Auth.settings.loginForm.find('.form-errors').html(errorsHTML(jqXHR.responseJSON.errors));
+			}
+		});
+	},
+	
+	logoutUser: function(csrf_token) {
+		$.ajax({
+			url: '/logout',
+			method: 'POST',
+			data: '_token=' + csrf_token,
+			success: function() {
+				$(document).ajaxStop(function() {location.reload(true)});
+			},
+			error: function() {
+				console.error('Error logging out');
+			}
+		});
+	}
+	
+};
+
 Category.init();
 Task.init();
+Auth.init();
 
 /* Misc functions */
 
 function errorsHTML(errorsObj) {
-	let errorsDiv = '<div class="alert alert-danger"><ul>';
+	let errorsDiv = '<div class="alert alert-danger">';
+	// If errors list is empty, but error took place return general error text
+	if ($.isEmptyObject(errorsObj)) {
+		return errorsDiv + 'Error. Please reload the page, and try again.</div>'
+	}
+	
+	errorsDiv += '<ul>';
 	$.each(errorsObj, function(eoKey, eoValue) {
 		$.each(eoValue, function(valKey, valValue) {
 			errorsDiv += '<li>' + valValue + '</li>';
@@ -363,6 +463,7 @@ function errorsHTML(errorsObj) {
 // Form input validation function with Laravel-like errors return and validation rules: 'rule0[|rule1[:value]...]'
 function validateInput(inputField, rulesStr) {
 	let inputFieldName = inputField.attr('name');
+	let inputFieldValue = inputField.val();
 	let inputFieldLength = inputField.val().length;
 	let errorsObj = {};
 	
@@ -374,6 +475,8 @@ function validateInput(inputField, rulesStr) {
 	});
 	
 	let testMin = true;
+	let testEmail = true;
+	let testConfirmation = true;
 	let ruleCondition,
 			ruleErrorMsg;
 	
@@ -385,22 +488,46 @@ function validateInput(inputField, rulesStr) {
 			case 'required':
 				ruleCondition = inputFieldLength == 0;
 				ruleErrorMsg = 'The ' + inputFieldName + ' field is required.';
-				if (ruleCondition) testMin = false; // If "required" rule did not pass validation do not test "min" rule
+				if (ruleCondition) { // If current rule did not pass validation do not test specified rules
+					testMin = false;
+					testEmail = false;
+					testConfirmation = false;
+				}
 				break;
 			case 'min':
 				if (!testMin) break;
 				ruleCondition = inputFieldLength < ruleVal;
 				ruleErrorMsg = 'The ' + inputFieldName + ' must be at least ' + ruleVal + ' characters.';
+				if (ruleCondition) { // If current rule did not pass validation do not test specified rules
+					testConfirmation = false;
+				}
 				break;
 			case 'max':
 				ruleCondition = inputFieldLength > ruleVal;
 				ruleErrorMsg = 'The ' + inputFieldName + ' may not be greater than ' + ruleVal + ' characters';
+				if (ruleCondition) { // If current rule did not pass validation do not test specified rules
+					testConfirmation = false;
+				}
+				break;
+			case 'email':
+				if (!testEmail) break;
+				// Basic email check (could be improved), if invalid email won't be catched with this rule it will be validated 
+				// on backend side 
+				ruleCondition = !(/.+@.+\..+/.test(inputFieldValue));  
+				ruleErrorMsg = 'The ' + inputFieldName + ' must be a valid email address.';
+				break;
+			case 'confirmed':
+				if (!testConfirmation) break;
+				let inputFieldConfirmedName = inputFieldName + '_confirmation';
+				let inputFieldConfirmedValue = inputField.closest('form').find('input[name="' + inputFieldConfirmedName + '"]').val();
+				ruleCondition = inputFieldValue !== inputFieldConfirmedValue;
+				ruleErrorMsg = 'The ' + inputFieldName + ' confirmation does not match.';
 				break;
 			case '':
 				console.error('Error. Empty validation rule is specified.');
 				break;
 			default:
-				console.error('Error. Validation rule: ' + rule + ' is invalid or not supported yet.');
+				console.error('Error. Validation rule: "' + rule + '" is invalid or not supported yet.');
 		}
 		
 		errorsObj = testValidationRule(errorsObj, ruleCondition, inputFieldName, ruleErrorMsg);
@@ -414,7 +541,7 @@ function testValidationRule(errorsObj, ruleStatus, inputName, errorMessage) {
 	if (ruleStatus) {
 		errorMessage = errorMessage.replace("%input%", inputName);
 		if (typeof errorsObj[inputName] == 'undefined') { // If object property is undefined then define it with new value
-			errorsObj[inputName]= [errorMessage];
+			errorsObj[inputName] = [errorMessage];
 		} else {  // Otherwise, append it
 				errorsObj[inputName].push(errorMessage);
 		}

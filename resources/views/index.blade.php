@@ -6,9 +6,11 @@
 			<div class="panel panel-default">
 				<div class="panel-heading lead clearfix" style="font-size: 16px; line-height: 200%; vertical-align: middle;">
 					Categories
-					<button type="button" class="btn btn-success pull-right" data-toggle="modal" data-target="#create-category-modal">
-						Create New Category
-					</button>
+					@if(Auth::check())
+						<button type="button" class="btn btn-success btn-sm pull-right" data-toggle="modal" data-target="#create-category-modal">Create New Category</button>
+					@else
+						<button disabled type="button" class="btn btn-secondary btn-sm pull-right" title="Only authenticated users can create categories">Create New Category</button>
+					@endif
 				</div>
 				<div class="categories-list panel-body list-group ">
 					@include('categories.categories_list')
@@ -19,9 +21,11 @@
 			<div class="panel panel-default">
 				<div class="panel-heading lead clearfix">
 					Tasks
-					<button type="button" class="btn btn-success pull-right" data-toggle="modal" data-target="#create-task-modal">
-						Create New Task
-					</button>
+					@if(Auth::check())
+						<button type="button" class="btn btn-success pull-right" data-toggle="modal" data-target="#create-task-modal">Create New Task</button>
+					@else
+						<button disabled type="button" class="btn btn-secondary pull-right" title="Only authenticated users can create tasks">Create New Task</button>
+					@endif
 				</div>
 				<div class="tasks-list panel-body">
 					@include('tasks.tasks_list')

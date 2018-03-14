@@ -1,6 +1,6 @@
 <?php
 
-Route::get('/', 'MainController@index');
+Route::get('/', 'MainController@index')->name('home');
 
 Route::get('/categories', 'CategoryController@index');
 Route::post('/categories', 'CategoryController@store');
@@ -13,3 +13,7 @@ Route::post('/tasks', 'TaskController@store');
 Route::put('/tasks/{task}', 'TaskController@update');
 Route::put('/tasks/{task}/set-status', 'TaskController@setStatus');
 Route::delete('/tasks/{task}', 'TaskController@destroy');
+
+Route::post('/register', 'AuthController@register');
+Route::post('/login', 'AuthController@login');
+Route::post('/logout', 'AuthController@destroy');

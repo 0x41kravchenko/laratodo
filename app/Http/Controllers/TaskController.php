@@ -4,17 +4,25 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Task;
+use App\Mail\MailNotification;
 
 class TaskController extends Controller
 {
+
+		public function __construct() {
+			$this->middleware('auth')->except(['index']);
+		}
+
 		public function index() {
 			$categoryId = request('cat');
 			$tasks = [];
 			if (is_null($categoryId) || $categoryId == "all") {
 				$tasks = Task::all();
-			} elseif (is_numeric($categoryId)) {
-					$tasks = Task::where('category_id', $categoryId)->get();
-			}
+			} elseif ( auth()->check() && $categoryId == "my-tasks") {
+					$tasks = auth()->user()->tasks;
+				} elseif (is_numeric($categoryId)) {
+						$tasks = Task::where('category_id', $categoryId)->get();
+				}
 			return view('tasks.tasks_list', compact('tasks'));
 		}
 		
@@ -23,7 +31,9 @@ class TaskController extends Controller
 				'title' => 'required|min:2|max:64',
 				'category_id' => 'required|integer' // Todo later: check if exists in database or equals 0;
 			]);
-			Task::create(request(['title', 'description','category_id']));
+			//Task::create(request(['title', 'description','category_id']));
+			auth()->user()->createTask( new Task(request(['title', 'description','category_id'])) );
+			\Mail::to(auth()->user())->send(new MailNotification);
 			return 'Done!';
 		}
 		
