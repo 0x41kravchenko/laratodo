@@ -16,7 +16,7 @@
 	<div class="form-group">
 		<div class="row">
 			<div class="col-xs-7">
-				<input type="checkbox" tabindex="3" id="remember-me">
+				<input type="checkbox" id="remember-me" tabindex="3">
 				<label for="remember-me"> Remember Me</label>
 			</div>
 				<div class="col-xs-5 pull-right">

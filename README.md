@@ -8,4 +8,4 @@ Implemented features:
 
 Todo:
 - Implement task expiration with email notification sent a day before.
-
+- Implement queue for email notifications to process task creation faster.

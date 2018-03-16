@@ -6,20 +6,19 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use App\Task;
 
-class MailNotification extends Mailable
+class TomorrowTaskExpiresEmail extends Mailable
 {
     use Queueable, SerializesModels;
-
+		
+		public $task;
+		
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public $task;
-     
-    public function __construct(Task $task)
+    public function __construct($task)
     {
         $this->task = $task;
     }
@@ -31,6 +30,6 @@ class MailNotification extends Mailable
      */
     public function build()
     {
-        return $this->subject('New task was created')->view('emails.task_created');
+        return $this->subject('Tomorrow expires task!')->view('emails.tomorrow_task_expires');
     }
 }

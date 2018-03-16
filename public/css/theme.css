@@ -278,11 +278,15 @@ form .form-errors ul {
 	border-top: 1px solid #dddddd;
 }
 
-.task-user {
+.task-user, .task-expiration {
 	float: right;
 	display: inline-block;
 	margin-top: 3px;
 	margin-right: 5px;
+}
+
+.task-expiration {
+	line-height: 14px;
 }
 
 ul.dropdown-lr {
@@ -302,4 +306,19 @@ ul.dropdown-lr {
 	text-decoration: none;
 	color: #ffffff;
 	background-color: #337ab7;
+}
+
+.checkbox-wrapper {
+	position: relative;
+}
+
+.checkbox-wrapper input {
+	position: absolute;
+	top: 32px;
+	left: 32px;
+	transform: scale(1.5);
+}
+
+.disabled-input {
+	opacity: 0.5;
 }

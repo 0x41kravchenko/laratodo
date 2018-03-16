@@ -40,11 +40,7 @@ class AuthController extends Controller
 				'remember-me' => 'boolean'
 			]);
 			
-			if (!auth()->attempt(request(['email', 'password']), request('remember-me'))) {
-				//~ return back()->withErrors([
-					//~ 'message' => 'Email or password is incorrect, please try again.'
-				//~ ]);
-				
+			if (!auth()->attempt(request(['email', 'password']), request('remember-me'))) {				
 				// return validation-like error
 				return response()->json([
 					'errors' => [['Email or password is incorrect, please try again.']]

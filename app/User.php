@@ -31,8 +31,17 @@ class User extends Authenticatable
 			return $this->hasMany(Task::class);
     }
     
+    /**
+     * Save passed Task in database
+     * 
+     * Passed $task doen't contain user_id, saved() method assigns it automatically
+     * and returns model instance with user_id
+     * 
+     * @return Task 
+     */
     public function createTask(Task $task) {
-			$this->tasks()->save($task);
+			$saved_task = $this->tasks()->save($task);
+			return $saved_task;
     }
     
 }

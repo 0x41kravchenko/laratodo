@@ -35,7 +35,8 @@ class DatabaseSeeder extends Seeder
 						'category_id' => rand(0, 5), // Generating also tasks without category (category_id = 0)
 						'title' => 'task_' . str_random(5),
 						'description' => rand(0,1)?'Some task description here with random text' . str_random(32):null,
-						'completed' => rand(0, 1)
+						'completed' => rand(0, 1),
+						'expires_at' => null
 	        ]);
         }
     }

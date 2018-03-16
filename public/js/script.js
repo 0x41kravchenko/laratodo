@@ -17,8 +17,6 @@ let Category = {
 	bindUIActions: function() {
 		Category.settings.categoriesList.on('click', 'a.list-group-item', function(e) { // Filter tasks by active category
 			e.preventDefault();
-			//let catId = $(this).data('category-id');
-			//console.log('Filter by category: ' + catId);
 			Category.settings.categoriesList.find('.active').removeClass('active');
 			$(this).addClass('active');
 			Category.settings.activeCategoryId = $(this).data('category-id');
@@ -82,7 +80,7 @@ let Category = {
 			error: function(jqXHR, status, errorThrown) {
 				let errorMessage = '<div class="alert alert-danger alert-message">Error updating categories list, please reload the page.</div>';
 				Category.settings.categoriesList.html(errorMessage);
-				console.log('Error updating categories list');
+				console.error('Error updating categories list');
 			}
 		});
 	},
@@ -109,7 +107,8 @@ let Category = {
 				Task.updateTaskFormsSelect();
 			},
 			error: function(jqXHR) {
-				Category.settings.createCategoryForm.find('.form-errors').html(errorsHTML(jqXHR.responseJSON.errors));
+				let responseErrors = $.isEmptyObject(jqXHR.responseJSON) ? null : jqXHR.responseJSON.errors;
+				Category.settings.createCategoryForm.find('.form-errors').html(errorsHTML(responseErrors));
 			}
 		});
 	},
@@ -134,8 +133,9 @@ let Category = {
 				Task.updateTaskFormsSelect();
 			},
 			error: function(jqXHR) {
-				console.log('Error editing category');
-				Category.settings.editCategoryForm.find('.form-errors').html(errorsHTML(jqXHR.responseJSON.errors));
+				console.error('Error editing category');
+				let responseErrors = $.isEmptyObject(jqXHR.responseJSON) ? null : jqXHR.responseJSON.errors;
+				Category.settings.editCategoryForm.find('.form-errors').html(errorsHTML(responseErrors));
 			}
 		});
 	},
@@ -153,7 +153,7 @@ let Category = {
 				Task.updateTaskFormsSelect();
 			},
 			error: function(jqXHR, status, errorThrown) {
-				console.log('Error deleting category');
+				console.error('Error deleting category');
 			}
 		});
 	}
@@ -214,7 +214,14 @@ let Task = {
 		Task.settings.createTaskModal.on('click', '#create-task-button', function(e) {
 			Task.createTask();
 		});
-
+		
+		Task.settings.createTaskModal.on('change', '#set-expiration', function(e) {
+			let setExpirationStatus = Task.settings.createTaskModal.find('#set-expiration').prop('checked');
+			Task.settings.createTaskForm.find('input[name="expiration-datetime"]').prop('disabled', !setExpirationStatus);
+			Task.settings.createTaskForm.find('input[name="expiration-datetime-tz"]').prop('disabled', !setExpirationStatus);
+			Task.settings.createTaskForm.find('.expiration-inputs label').toggleClass('disabled-input');
+		});
+		
 		Task.settings.tasksList.on('change', '#task-status', function(e) {
 			let taskId = $(this).closest('li').data('task-id');
 			let taskStatus = $(this).prop('checked')?1:0;
@@ -223,12 +230,16 @@ let Task = {
 		});
 		
 		Task.settings.createTaskModal.on('show.bs.modal', function(e) {
+			let currentDatetime = new Date();
+			let timezoneOffset = currentDatetime.getTimezoneOffset();
 			let activeCatId = Category.settings.activeCategoryId;
 			if (activeCatId == 'all' | activeCatId == 'my-tasks') { // If selected filter is "all tasks" or current user's tasks then set select intput category to "None" 
 				activeCatId = 0;
 			}
 			Task.settings.createTaskForm.find('option[selected="selected"]').removeProp('selected');
 			Task.settings.createTaskForm.find('option[value="' + activeCatId + '"]').prop('selected', 'selected');
+			Task.settings.createTaskForm.find('input[name="expiration-datetime"]').val(dateWithOffsetToISOString(currentDatetime));
+			Task.settings.createTaskForm.find('input[name="expiration-datetime-tz"]').val(timezoneOffsetToStr(timezoneOffset));
 		});
 	},
 	
@@ -244,7 +255,7 @@ let Task = {
 			error: function(jqXHR) {
 				let errorMessage = '<div class="alert alert-danger alert-message">Error updating tasks list, please reload the page.</div>';
 				Task.settings.tasksList.html(errorMessage);
-				console.log('Error updating tasks list');
+				console.error('Error updating tasks list');
 			}
 		});
 	},
@@ -257,19 +268,25 @@ let Task = {
 			return;
 		}
 		
+		let expirationDt = Task.settings.createTaskForm.find('input[name="expiration-datetime"]').val();
+		let expirationDtTz = Task.settings.createTaskForm.find('input[name="expiration-datetime-tz"]').val();
+		let expiresAt = expirationDt + expirationDtTz;
+		
 		$.ajax({
 			url: '/tasks',
 			method: 'POST',
-			data: Task.settings.createTaskForm.serialize(),
+			data: Task.settings.createTaskForm.serialize() + '&expires_at=' + encodeURIComponent(expiresAt),
 			success: function() {
 				Task.getTasks();
 				Category.getCats(); // update categories list counters
 				Task.settings.createTaskModal.modal('hide');
 				Task.settings.createTaskForm.find('.form-errors').empty();
 				Task.settings.createTaskForm.trigger('reset');
+				Task.settings.createTaskForm.find('.expiration-inputs label').removeClass('disabled-input');
 			},
 			error: function(jqXHR) {
-				Task.settings.createTaskForm.find('.form-errors').html(errorsHTML(jqXHR.responseJSON.errors));
+				let responseErrors = $.isEmptyObject(jqXHR.responseJSON) ? null : jqXHR.responseJSON.errors;
+				Task.settings.createTaskForm.find('.form-errors').html(errorsHTML(responseErrors));
 			}
 		});
 	},
@@ -293,7 +310,8 @@ let Task = {
 				Task.settings.editTaskModal.modal('hide');
 			},
 			error: function(jqXHR) {
-				Task.settings.editTaskForm.find('.form-errors').html(errorsHTML(jqXHR.responseJSON.errors));
+				let responseErrors = $.isEmptyObject(jqXHR.responseJSON) ? null : jqXHR.responseJSON.errors;
+				Task.settings.editTaskForm.find('.form-errors').html(errorsHTML(responseErrors));
 			}
 		});
 	},
@@ -308,7 +326,7 @@ let Task = {
 				Category.getCats(); // refresh counters in categories list
 			},
 			error: function() {
-				console.log('Error deleting task');
+				console.error('Error deleting task');
 			}
 		});
 	},
@@ -322,7 +340,7 @@ let Task = {
 				Task.getTasks();
 			},
 			error: function() {
-				console.log('Error setting task status');
+				console.error('Error setting task status');
 			}
 		});
 	},
@@ -337,7 +355,7 @@ let Task = {
 				Task.settings.editTaskModal.find('.categories-select-input').html(response);
 			},
 			error: function(jqXHR) {
-				console.log('Error updating categories select input');
+				console.error('Error updating categories select input');
 			}
 		});
 	}
@@ -402,12 +420,21 @@ let Auth = {
 				$(document).ajaxStop(function() {location.reload(true)});
 			},
 			error: function(jqXHR) {
-				Auth.settings.registerForm.find('.form-errors').html(errorsHTML(jqXHR.responseJSON.errors));
+				let responseErrors = $.isEmptyObject(jqXHR.responseJSON) ? null : jqXHR.responseJSON.errors;
+				Auth.settings.registerForm.find('.form-errors').html(errorsHTML(responseErrors));
 			}
 		});
 	},
 	
 	loginUser: function(rememberMe) {
+	
+		let valErrors = validateInput(Auth.settings.loginForm.find('input[name="email"]'), 'required|email');
+		$.extend(valErrors, validateInput(Auth.settings.loginForm.find('input[name="password"]'), 'required'));
+		if (!$.isEmptyObject(valErrors)) {
+			Auth.settings.loginForm.find('.form-errors').html(errorsHTML(valErrors));
+			return;
+		}
+	
 		$.ajax({
 			url: '/login',
 			method: 'POST',
@@ -416,7 +443,8 @@ let Auth = {
 				$(document).ajaxStop(function() {location.reload(true)});
 			},
 			error: function(jqXHR) {
-				Auth.settings.loginForm.find('.form-errors').html(errorsHTML(jqXHR.responseJSON.errors));
+				let responseErrors = $.isEmptyObject(jqXHR.responseJSON) ? null : jqXHR.responseJSON.errors;
+				Auth.settings.loginForm.find('.form-errors').html(errorsHTML(responseErrors));
 			}
 		});
 	},
@@ -458,6 +486,30 @@ function errorsHTML(errorsObj) {
 	});
 	errorsDiv += '</ul></div>';
 	return errorsDiv;
+}
+
+function dateWithOffsetToISOString(date) {
+	let fullYear = date.getFullYear();
+	let month = date.getMonth()+1;
+	let day = date.getDate();
+	let hours = date.getHours();
+	let minutes = date.getMinutes();
+	let fullMonth = month<10 ? '0'+month : month;
+	let fullDay = day<10 ? '0'+day : day;
+	let fullHours = hours<10 ? '0'+hours : hours;
+	let fullMinutes = minutes<10 ? '0'+minutes : minutes;
+	
+	return fullYear + '-' + fullMonth + '-' + fullDay + 'T' + fullHours + ':' + fullMinutes;
+}
+
+function timezoneOffsetToStr(tzOffset) {
+	let inverseTzOffsetSign = tzOffset<=0 ? '+' : '-' ;  // (getting inverse timezone offset sign, since tzOffset of -X minutes == UTC+HH:MM)
+	let offsetHours = Math.trunc(Math.abs(tzOffset) / 60);
+	let offsetMinutes = Math.abs(tzOffset) % 60;
+	let offsetFullHours = offsetHours<10 ? '0'+offsetHours : offsetHours;
+	let offsetFullMinutes = offsetMinutes<10 ? '0'+offsetMinutes : offsetMinutes;
+	
+	return inverseTzOffsetSign + offsetFullHours + ':' + offsetFullMinutes;
 }
 
 // Form input validation function with Laravel-like errors return and validation rules: 'rule0[|rule1[:value]...]'

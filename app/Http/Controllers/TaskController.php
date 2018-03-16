@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Task;
-use App\Mail\MailNotification;
+use App\Jobs\SendNotificationEmail;
+use App\Mail\TaskCreatedEmail;
 
 class TaskController extends Controller
 {
@@ -26,15 +27,29 @@ class TaskController extends Controller
 			return view('tasks.tasks_list', compact('tasks'));
 		}
 		
-		public function store() {
-			$this->validate(request(), [
-				'title' => 'required|min:2|max:64',
-				'category_id' => 'required|integer' // Todo later: check if exists in database or equals 0;
-			]);
-			//Task::create(request(['title', 'description','category_id']));
-			$task = new Task(request(['title', 'description','category_id']));
-			auth()->user()->createTask( $task );
-			\Mail::to(auth()->user())->send( new MailNotification($task) );
+		public function store(Request $request) {
+			
+			if ($request->has('set-expiration')) {
+						
+				$this->validate($request, [
+					'title' => 'required|min:2|max:64',
+					'category_id' => 'required|integer', // Todo later: check if exists in database or equals 0;
+					'expires_at' => 'date|after_or_equal:now'
+				]);				
+			
+			} else {
+			
+					$this->validate($request, [
+						'title' => 'required|min:2|max:64',
+						'category_id' => 'required|integer', // Todo later: check if exists in database or equals 0;
+					]);
+					$request['expires_at'] = null;
+			
+			}
+			
+			$task = new Task( $request->only(['title', 'description', 'category_id', 'expires_at']) );
+			$created_task = auth()->user()->createTask( $task );
+			SendNotificationEmail::dispatch( $created_task, new TaskCreatedEmail($created_task) );
 			return 'Done!';
 		}
 		

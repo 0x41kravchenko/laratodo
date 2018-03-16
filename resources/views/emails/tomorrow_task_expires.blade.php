@@ -9,8 +9,8 @@
 		</style>
 	</head>
 	<body>
-		<h1>New task was created!</h1>
-		<span class="task-info">Task details: </span>
+		<h1>Tomorrow task expires!</h1>
+		<span class="task-info">Task with this details will expire tomorrow: </span>
 		<ul>
 			<li><span class="task-info">title: </span>{{ $task->title }}</li>
 			
@@ -22,7 +22,7 @@
 				<li><span class="task-info">category: </span>{{ $task->category->name }}</li>
 			@endif
 			
-			<li><span class="task-info">expiration date: </span>{{ is_null($task->expires_at)?'never':$task->expires_at }}</li>
+			<li><span class="task-info">expiration date: </span>{{ $task->expires_at }}</li>
 		</ul>
 	</body>
 </html>
