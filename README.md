@@ -5,7 +5,5 @@ Implemented features:
 - User registration and authentication. Only authenticated users can create/edit/delete tasks and categories.
 - Filter tasks by categories, show only current user's tasks or all tasks.
 - Email notification: when new task is created user receives notification email.
-
-Todo:
-- Implement task expiration with email notification sent a day before.
-- Implement queue for email notifications to process task creation faster.
+- Task expiration with email notification sent a day before.
+- Queue for email notifications sending.
