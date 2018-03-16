@@ -30,6 +30,6 @@ class TomorrowTaskExpiresEmail extends Mailable
      */
     public function build()
     {
-        return $this->subject('Tomorrow expires task!')->view('emails.tomorrow_task_expires');
+        return $this->subject('A task expires in one day or less!')->view('emails.tomorrow_task_expires');
     }
 }
