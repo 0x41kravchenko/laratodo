@@ -281,8 +281,10 @@ let Task = {
 				Category.getCats(); // update categories list counters
 				Task.settings.createTaskModal.modal('hide');
 				Task.settings.createTaskForm.find('.form-errors').empty();
+				Task.settings.createTaskForm.find('.expiration-inputs label').addClass('disabled-input');
+				Task.settings.createTaskForm.find('input[name="expiration-datetime"]').prop('disabled', true);
+				Task.settings.createTaskForm.find('input[name="expiration-datetime-tz"]').prop('disabled', true);
 				Task.settings.createTaskForm.trigger('reset');
-				Task.settings.createTaskForm.find('.expiration-inputs label').removeClass('disabled-input');
 			},
 			error: function(jqXHR) {
 				let responseErrors = $.isEmptyObject(jqXHR.responseJSON) ? null : jqXHR.responseJSON.errors;
