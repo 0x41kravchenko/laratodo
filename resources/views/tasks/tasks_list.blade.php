@@ -32,13 +32,13 @@
 				@else
 					<div class="task-user label label-default" data-user-id="{{ $task->user->id }}"><i class="glyphicon glyphicon-user"></i> {{ $task->user->name }}</div>
 					@if ($task->is_expired)
-						<div class="task-expiration label label-danger" title="{{ \Carbon\Carbon::parse($task->expires_at)->toRfc850String() }}">Expired</div>
+						<div class="task-expiration label label-danger" data-task-expires-at-dt="{{ \Carbon\Carbon::parse($task->expires_at)->format('Y-m-d\TH:i') }}" data-task-expires-at-tz="{{ \Carbon\Carbon::parse($task->expires_at)->format('P') }}" title="{{ \Carbon\Carbon::parse($task->expires_at)->toRfc850String() }}">Expired</div>
 					@elseif ($task->expr_tmrw_email_queued)
-						<div class="task-expiration label label-warning" title="{{ \Carbon\Carbon::parse($task->expires_at)->toRfc850String() }}">Expires tomorrow</div>
+						<div class="task-expiration label label-warning" data-task-expires-at-dt="{{ \Carbon\Carbon::parse($task->expires_at)->format('Y-m-d\TH:i') }}" data-task-expires-at-tz="{{ \Carbon\Carbon::parse($task->expires_at)->format('P') }}" title="{{ \Carbon\Carbon::parse($task->expires_at)->toRfc850String() }}">Expires tomorrow</div>
 					@elseif (!is_null($task->expires_at))
-						<div class="task-expiration label label-primary" title="{{ \Carbon\Carbon::parse($task->expires_at)->toRfc850String() }}">Days left: {{ \Carbon\Carbon::now()->diffInDays(\Carbon\Carbon::parse($task->expires_at)) }}</div>
+						<div class="task-expiration label label-primary" data-task-expires-at-dt="{{ \Carbon\Carbon::parse($task->expires_at)->format('Y-m-d\TH:i') }}" data-task-expires-at-tz="{{ \Carbon\Carbon::parse($task->expires_at)->format('P') }}" title="{{ \Carbon\Carbon::parse($task->expires_at)->toRfc850String() }}">Days left: {{ \Carbon\Carbon::now()->diffInDays(\Carbon\Carbon::parse($task->expires_at)) }}</div>
 					@else
-						<div class="task-expiration label label-primary">∞</div>
+						<div class="task-expiration label label-primary" data-task-expires-at-dt="∞" data-task-expires-at-tz="∞">∞</div>
 					@endif
 				@endif
 			</div>

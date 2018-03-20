@@ -187,10 +187,32 @@ let Task = {
 			let taskId = $(this).closest('li').data('task-id');
 			let taskTitle = $(this).closest('li').find('.task-title').text();
 			let taskDescr = $(this).closest('li').find('.task-description').text();
+			let taskExpAtDt = $(this).closest('li').find('.task-expiration').data('task-expires-at-dt');
+			let taskExpAtTz = $(this).closest('li').find('.task-expiration').data('task-expires-at-tz');
 			let catId = $(this).closest('li').find('.task-category').data('category-id');
 			Task.settings.editTaskForm.find('input[name="id"]').val(taskId);
 			Task.settings.editTaskForm.find('input[name="title"]').val(taskTitle);
+			if (taskDescr == 'No description') {
+				taskDescr = '';
+			}
 			Task.settings.editTaskForm.find('textarea[name="description"]').val(taskDescr);
+			if (taskExpAtDt == '∞' && taskExpAtTz == '∞') {
+					let currentDatetime = new Date();
+					let timezoneOffset = currentDatetime.getTimezoneOffset();
+					taskExpAtDt = dateWithOffsetToISOString(currentDatetime);
+					taskExpAtTz = timezoneOffsetToStr(timezoneOffset);
+					Task.settings.editTaskModal.find('#edit-expiration').prop('checked', false);
+					Task.settings.editTaskForm.find('.expiration-inputs label').addClass('disabled-input');
+					Task.settings.editTaskForm.find('input[name="expiration-datetime"]').prop('disabled', true);
+					Task.settings.editTaskForm.find('input[name="expiration-datetime-tz"]').prop('disabled', true);
+			} else {
+					Task.settings.editTaskModal.find('#edit-expiration').prop('checked', true);
+					Task.settings.editTaskForm.find('.expiration-inputs label').removeClass('disabled-input');
+					Task.settings.editTaskForm.find('input[name="expiration-datetime"]').prop('disabled', false);
+					Task.settings.editTaskForm.find('input[name="expiration-datetime-tz"]').prop('disabled', false);
+			}
+			Task.settings.editTaskForm.find('input[name="expiration-datetime"]').val(taskExpAtDt);
+			Task.settings.editTaskForm.find('input[name="expiration-datetime-tz"]').val(taskExpAtTz);
 			Task.settings.editTaskForm.find('option[selected="selected"]').removeProp('selected');
 			Task.settings.editTaskForm.find('option[value="' + catId + '"]').prop('selected', 'selected');
 			Task.settings.editTaskForm.find('.form-errors').empty();
@@ -220,6 +242,13 @@ let Task = {
 			Task.settings.createTaskForm.find('input[name="expiration-datetime"]').prop('disabled', !setExpirationStatus);
 			Task.settings.createTaskForm.find('input[name="expiration-datetime-tz"]').prop('disabled', !setExpirationStatus);
 			Task.settings.createTaskForm.find('.expiration-inputs label').toggleClass('disabled-input');
+		});
+		
+		Task.settings.editTaskModal.on('change', '#edit-expiration', function(e) {
+			let editExpirationStatus = Task.settings.editTaskModal.find('#edit-expiration').prop('checked');
+			Task.settings.editTaskForm.find('input[name="expiration-datetime"]').prop('disabled', !editExpirationStatus);
+			Task.settings.editTaskForm.find('input[name="expiration-datetime-tz"]').prop('disabled', !editExpirationStatus);
+			Task.settings.editTaskForm.find('.expiration-inputs label').toggleClass('disabled-input');
 		});
 		
 		Task.settings.tasksList.on('change', '#task-status', function(e) {
@@ -300,12 +329,16 @@ let Task = {
 			Task.settings.editTaskForm.find('.form-errors').html(errorsHTML(valErrors));
 			return;
 		}
-	
+		
+		let expirationDt = Task.settings.editTaskForm.find('input[name="expiration-datetime"]').val();
+		let expirationDtTz = Task.settings.editTaskForm.find('input[name="expiration-datetime-tz"]').val();
+		let expiresAt = expirationDt + expirationDtTz;
+		
 		let taskId = Task.settings.editTaskForm.find('input[name="id"]').val();
 		$.ajax({
 			url: '/tasks/' + taskId,
 			method: 'POST',
-			data: Task.settings.editTaskForm.serialize(),
+			data: Task.settings.editTaskForm.serialize() + '&expires_at=' + encodeURIComponent(expiresAt),
 			success: function() {
 				Task.getTasks();
 				Category.getCats(); // updating categories list counters

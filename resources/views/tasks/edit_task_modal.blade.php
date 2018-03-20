@@ -19,6 +19,21 @@
 					<label>Description</label>
 					<textarea name="description" class="form-control" placeholder="Task description"></textarea>
 				</div>
+				<div class="form-group expiration-inputs">
+					<div class="row">
+					<div class="col-sm-1 checkbox-wrapper">
+						<input type="checkbox" name="edit-expiration" id="edit-expiration">
+					</div>
+					<div class="col-sm-7">
+						<label class="disabled-input">Expiration date</label>
+						<input type="datetime-local" step="60" name="expiration-datetime" class="form-control" value="" disabled>
+					</div>
+					<div class="col-sm-4">
+						<label class="disabled-input">UTC offset (timezone)</label>
+						<input type="text" name="expiration-datetime-tz" value="+00:00" class="form-control" disabled>
+					</div>
+					</div>
+				</div>
 				<div class="form-group categories-select-input">
 					@include('categories.categories_select_input')
 				</div>

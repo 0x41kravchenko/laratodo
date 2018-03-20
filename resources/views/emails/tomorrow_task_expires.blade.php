@@ -9,7 +9,7 @@
 		</style>
 	</head>
 	<body>
-		<h1>This task expires in one day or less!</h1>
+		<h1>This task expires tomorrow (24h)!</h1>
 		<span class="task-info">Task details: </span>
 		<ul>
 			<li><span class="task-info">title: </span>{{ $task->title }}</li>

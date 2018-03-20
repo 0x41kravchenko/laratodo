@@ -322,3 +322,7 @@ ul.dropdown-lr {
 .disabled-input {
 	opacity: 0.5;
 }
+
+.modal-dialog textarea {
+	resize: vertical;
+}
